@@ -1,0 +1,164 @@
+#!/usr/bin/bash
+
+#O=   # set Organization name (company)
+#OU=  # set Organization Unit name (customer)
+#WWW= # set Common Name for server TLS (www.example.org)
+
+
+# strict script
+set -euo pipefail
+SELF=$( readlink -e "$0" )
+
+
+# tree structure
+mkdir pki; cd pki; mkdir .certs .db root server users
+
+
+# openssl configuration
+cat > .conf << eoc
+[ ca ]
+name                   = CAroot
+default_ca             = CA_default
+name_opt               = utf8,esc_ctrl,multiline,lname,align
+[ CA_default ]
+home                   = .
+database               = \$home/.db/index.txt
+serial                 = \$home/.db/serial
+crlnumber              = \$home/.db/crlnumber
+certificate            = \$home/root/ca.crt
+private_key            = \$home/root/ca.key
+new_certs_dir          = \$home/.certs
+default_days           = 3652
+default_crl_days       = 3652
+default_md             = sha384
+policy                 = policy_ON_match
+copy_extensions        = none
+[ policy_ON_match ]
+commonName             = supplied
+organizationName       = match
+organizationalUnitName = match
+[ req ]
+prompt                 = no
+[ ext_ca ]
+authorityKeyIdentifier = keyid:always,issuer
+subjectKeyIdentifier   = hash
+basicConstraints       = critical,CA:true
+keyUsage               = critical,keyCertSign,cRLSign
+[ ext_server ]
+basicConstraints       = CA:FALSE
+subjectKeyIdentifier   = hash
+keyUsage               = critical,digitalSignature,keyEncipherment
+extendedKeyUsage       = serverAuth
+subjectAltName         = @alt_names
+[ alt_names ]
+DNS.1 = $WWW
+[ ext_user ]
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints       = CA:FALSE
+subjectKeyIdentifier   = hash
+keyUsage               = critical,digitalSignature
+extendedKeyUsage       = clientAuth
+subjectAltName         = DNS:localhost
+eoc
+
+
+# database
+echo; echo '♻️  Self made PKI initialization...'
+: > .db/index.txt
+openssl rand -hex 16 | tr 'a-z' 'A-Z' > .db/serial
+echo 1234 > .db/crlnumber
+
+
+# CA key password
+echo; echo '1️⃣  Root CA key password...'
+CAPASS=; while [ -z "$CAPASS" ]; do
+  read -rsp 'Type CA key password : ' CAPASS; echo
+  read -rsp 'Verification         : ' REPASS; echo
+  [ "$CAPASS" != "$REPASS" ] && echo 'wrong passwords !' >&2 && CAPASS=
+done
+echo -n '⚠️  THIS IS VERY IMPORTANT SECRET 🔑 : REMEMBER IT AND NOT SHARE IT ⚠️ '; read -rsp ''; echo
+SUBJ="O=$O/OU=$OU"
+export CAPASS
+
+
+# root
+echo; echo '2️⃣  Root CA certificat generation...'
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-384 -aes-256-cbc -out root/ca.key -pass env:CAPASS
+openssl req -x509 -days 3652 -config .conf -extensions ext_ca -key root/ca.key -out root/ca.crt -subj "/CN=CAroot/$SUBJ" -passin env:CAPASS
+chmod 400 root/ca.{crt,key}; chmod 700 root
+
+
+# server
+echo; echo '3️⃣  Server certificat generation...'
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-384 -out server/tls.key
+openssl req -new -key server/tls.key -config .conf -out .tls.csr -subj "/CN=$WWW/$SUBJ"
+openssl ca -batch -config .conf -extensions ext_server -in .tls.csr -out server/tls.crt -passin env:CAPASS
+rm .tls.csr; chmod 400 server/tls.{crt,key}; chmod 700 server
+
+
+# clients
+echo; echo '4️⃣  Helpers generation...'
+cat > .read.user << 'eos'
+#!/usr/bin/bash
+
+USER=; while [ -z "$USER" ]; do
+  read -rp 'User (ASCII alpha num chars only) : ' USER; echo
+  grep --color '[^[:alnum:]]' <<< "$USER" && USER= || true
+done
+eos
+
+chmod -x .read.user
+
+cat > create.user << 'eos'
+#!/usr/bin/bash
+
+set -euo pipefail
+echo; echo '✅  User certificat generation...'
+source .read.user
+read -rsp "Use « $USER » for certificat ([Ctrl]-[C] to abort) ? "; echo; echo
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-384 -out users/$USER.key
+openssl req -new -key users/$USER.key -config .conf -out .$USER.csr -subj "/CN=$USER/$SUBJ"
+openssl ca -batch -config .conf -extensions ext_user -in .$USER.csr -out users/$USER.crt
+rm .$USER.csr; chmod 400 users/$USER.{crt,key}
+echo; echo ':: User P12 generation...'
+openssl pkcs12 -export -in users/$USER.crt -inkey users/$USER.key -certfile root/ca.crt -out users/$USER.p12 ||
+( echo 'new try... '; openssl pkcs12 -export -in users/$USER.crt -inkey users/$USER.key -certfile root/ca.crt -out users/$USER.p12 ) ||
+( echo 'last try... '; openssl pkcs12 -export -in users/$USER.crt -inkey users/$USER.key -certfile root/ca.crt -out users/$USER.p12 )
+[ -f users/$USER.p12 ] || exit 1
+chmod 400 users/$USER.p12
+echo; echo "🚀  You can now send « users/$USER.p12 » and « Export Password » to user"
+echo
+eos
+
+sed -i "s;\$SUBJ;$SUBJ;" create.user
+chmod +x create.user
+
+cat > revoke.user << 'eos'
+#!/usr/bin/bash
+
+set -euo pipefail
+echo; echo '✖️  User certificat revocation...'
+echo; ls -C users/*.crt | sed -E -e 's;(^| )users/; ;g' -e 's;\.crt( |$); ;g'
+echo; source .read.user
+read -rsp "Revoke « $USER » ([Ctrl]-[C] to abort) ? "; echo; echo
+openssl ca -config .conf -revoke users/$USER.crt
+openssl ca -config .conf -gencrl -out server/crl.pem
+rm -f users/$USER.*
+echo; echo "📌  User « $USER » is now revoked and CRL is updated"
+echo
+eos
+
+chmod +x revoke.user
+
+# informations
+echo; echo '🎉 Self made PKI initialized !'
+echo 'Root CA certificate is « pki/root/ca.crt ».'
+echo 'Server TLS certificate and key are « pki/server/tls.{crt,key} ».'
+echo 'You can now create and/or revoke users certificat.'
+echo 'In this last case, CRL will be « server/crl.pem ».'
+
+
+echo
+chmod -x "$SELF"
+unset CAPASS
+exec bash
