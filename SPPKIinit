@@ -63,7 +63,7 @@ eoc
 
 
 # database
-echo; echo '♻️  Self made PKI initialization...'
+echo; echo '♻️  Simple Personal PKI initialization...'
 : > .db/index.txt
 openssl rand -hex 16 | tr 'a-z' 'A-Z' > .db/serial
 echo 1234 > .db/crlnumber
@@ -97,7 +97,7 @@ rm .tls.csr; chmod 400 server/tls.{crt,key}; chmod 700 server
 
 
 # clients
-echo; echo '4️⃣  Helpers generation...'
+echo; echo '4️⃣  Client helpers generation...'
 cat > .read.user << 'eos'
 #!/usr/bin/bash
 
@@ -151,7 +151,7 @@ eos
 chmod +x revoke.user
 
 # informations
-echo; echo '🎉 Self made PKI initialized !'
+echo; echo '🎉 Simple Personal PKI initialized !'
 echo 'Root CA certificate is « pki/root/ca.crt ».'
 echo 'Server TLS certificate and key are « pki/server/tls.{crt,key} ».'
 echo 'You can now create and/or revoke users certificat.'
