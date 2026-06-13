@@ -27,7 +27,7 @@ pki/
 └── users/
 ```
 
-> The « hidden » part is for OpenSSL and scripts `*.user` :
+> The « hidden » part is for OpenSSL and `*.user` scripts :
 > ```bash
 > pki/
 > ├── .certs/
