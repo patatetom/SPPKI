@@ -11,3 +11,27 @@ SPPKI is in fact a [Bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell)) scrip
 
 The three variables `O` (Organization), `OU` (Organization Unit) and `WWW` (Common Name for server TLS) must be defined before starting the initialization by running `SPPKIinit` :
 open the script in an editor, make the necessary changes, and take this opportunity to check its contents.
+
+Once initialized, the PKI has the following « visible » structure :
+
+```
+pki/
+├── create.user
+├── revoke.user
+├── root/
+│   ├── ca.crt
+│   └── ca.key
+├── server/
+│   ├── tls.crt
+│   └── tls.key
+└── users/
+```
+
+> The « hidden » part is for OpenSSL and scripts `*.user` :
+> ```bash
+> pki/
+> ├── .certs/
+> ├── .conf
+> ├── .db/
+> └── .read.user
+> ```
