@@ -93,7 +93,8 @@ echo; echo '3️⃣  Server certificat generation...'
 openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-384 -out server/tls.key
 openssl req -new -key server/tls.key -config .conf -out .tls.csr -subj "/CN=$WWW/$SUBJ"
 openssl ca -batch -config .conf -extensions ext_server -in .tls.csr -out server/tls.crt -passin env:CAPASS
-rm .tls.csr; chmod 400 server/tls.{crt,key}; chmod 700 server
+openssl ca -batch -config .conf -gencrl -out server/crl.pem -passin env:CAPASS
+rm .tls.csr; chmod 440 server/tls.{crt,key}; chmod 770 server
 
 
 # clients
@@ -154,8 +155,8 @@ chmod +x revoke.user
 echo; echo '🎉 Simple Personal PKI initialized !'
 echo 'Root CA certificate is « pki/root/ca.crt ».'
 echo 'Server TLS certificate and key are « pki/server/tls.{crt,key} ».'
+echo 'Server mTLS certificate revocation list is « server/crl.pem ».'
 echo 'You can now create and/or revoke users certificat.'
-echo 'In this last case, CRL will be « server/crl.pem ».'
 
 
 echo
