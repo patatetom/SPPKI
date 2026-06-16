@@ -21,6 +21,7 @@ name                   = CAroot
 default_ca             = CA_default
 name_opt               = utf8,esc_ctrl,multiline,lname,align
 [ CA_default ]
+serial                 = random
 home                   = .
 database               = \$home/.db/index.txt
 serial                 = \$home/.db/serial
@@ -38,6 +39,7 @@ commonName             = supplied
 organizationName       = match
 organizationalUnitName = match
 [ req ]
+default_md             = sha384
 prompt                 = no
 [ ext_ca ]
 authorityKeyIdentifier = keyid:always,issuer
@@ -45,16 +47,16 @@ subjectKeyIdentifier   = hash
 basicConstraints       = critical,CA:true
 keyUsage               = critical,keyCertSign,cRLSign
 [ ext_server ]
-basicConstraints       = CA:FALSE
+basicConstraints       = critical,CA:FALSE
 subjectKeyIdentifier   = hash
-keyUsage               = critical,digitalSignature,keyEncipherment
+keyUsage               = critical,digitalSignature
 extendedKeyUsage       = serverAuth
 subjectAltName         = @alt_names
 [ alt_names ]
 DNS.1 = $WWW
 [ ext_user ]
 authorityKeyIdentifier = keyid:always,issuer
-basicConstraints       = CA:FALSE
+basicConstraints       = critical,CA:FALSE
 subjectKeyIdentifier   = hash
 keyUsage               = critical,digitalSignature
 extendedKeyUsage       = clientAuth
