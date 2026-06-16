@@ -1,0 +1,46 @@
+# caddy run --config Caddyfile.localhost
+
+# for debug only
+# caddy auto TLS and self made mTLS
+# or self made TLS/mTLS
+{
+	admin off
+	auto_https off
+	debug
+
+#	default_sni localhost.localdomain
+	servers {
+		strict_sni_host on
+	}
+}
+
+localhost.localdomain:8888 {
+	reverse_proxy localhost:8000
+
+        header {
+                -Server
+                -Via
+        }
+
+	# Caddy auto TLS
+	#tls {
+
+	# Caddy self made TLS
+	tls /root/pki/server/tls.crt /root/pki/server/tls.key {
+		# self made mTLS
+		client_auth {
+			mode require_and_verify
+			trust_pool file /root/pki/root/ca.crt
+			verifier revocation {
+				mode crl_only
+				crl_config {
+					work_dir /tmp/
+					storage_type memory
+					signature_validation_mode verify
+					crl_file /root/pki/server/crl.pem
+					trusted_signature_cert_file /root/pki/root/ca.crt
+				}
+			}
+		}
+	}
+}
