@@ -112,15 +112,15 @@ https: error: SSLError: HTTPSConnectionPool(host='localhost.localdomain', port=8
 
 https --verify no localhost.localdomain:8888
 https: error: SSLError: HTTPSConnectionPool(host='localhost.localdomain', port=8888): Max retries exceeded with url: / (Caused by SSLError(SSLError(1, '[SSL: TLSV13_ALERT_CERTIFICATE_REQUIRED] tlsv13 alert certificate required (_ssl.c:2657)'))) while doing a GET request to URL: https://localhost.localdomain:8888/
-#            ********************
+#                                                                                                                                                                          ********************
 
 https --verify pki/server/tls.crt localhost.localdomain:8888
 https: error: SSLError: HTTPSConnectionPool(host='localhost.localdomain', port=8888): Max retries exceeded with url: / (Caused by SSLError(SSLError(1, '[SSL: TLSV13_ALERT_CERTIFICATE_REQUIRED] tlsv13 alert certificate required (_ssl.c:2657)'))) while doing a GET request to URL: https://localhost.localdomain:8888/
-#            ********************
+#                                                                                                                                                                          ********************
 
 https --verify pki/root/ca.crt localhost.localdomain:8888
 https: error: SSLError: HTTPSConnectionPool(host='localhost.localdomain', port=8888): Max retries exceeded with url: / (Caused by SSLError(SSLError(1, '[SSL: TLSV13_ALERT_CERTIFICATE_REQUIRED] tlsv13 alert certificate required (_ssl.c:2657)'))) while doing a GET request to URL: https://localhost.localdomain:8888/
-#            ********************
+#                                                                                                                                                                          ********************
 
 https --verify pki/server/tls.crt --cert pki/users/alice.crt --cert-key pki/users/alice.key localhost.localdomain:8888
 HTTP/1.1 200 OK
