@@ -74,11 +74,11 @@ echo 1234 > .db/crlnumber
 # CA key password
 echo; echo '1️⃣  Root CA key password...'
 CAPASS=; while [ -z "$CAPASS" ]; do
-  read -rsp 'Type CA key password : ' CAPASS; echo
-  read -rsp 'Verification         : ' REPASS; echo
+  read -rsp 'Type CA key password 🔑 : ' CAPASS; echo
+  read -rsp 'Retype               🔑 : ' REPASS; echo
   [ "$CAPASS" != "$REPASS" ] && echo 'wrong passwords !' >&2 && CAPASS=
 done
-echo -n '⚠️  THIS IS VERY IMPORTANT SECRET 🔑 : REMEMBER IT AND NOT SHARE IT ⚠️ '; read -rsp ''; echo
+echo -n '⚠️  THIS IS VERY IMPORTANT SECRET 🔑 : REMEMBER IT AND NOT SHARE IT ⚠️  '; read -rsp ''; echo
 SUBJ="O=$O/OU=$OU"
 export CAPASS
 
@@ -110,27 +110,34 @@ USER=; while [ -z "$USER" ]; do
 done
 eos
 
-chmod -x .read.user
+cat > .read.pass << 'eos'
+#!/usr/bin/bash
+
+CAPASS=; while [ -z "$CAPASS" ]; do
+  read -rsp 'Type CA key password 🔑 : ' CAPASS; echo
+done
+export CAPASS
+eos
 
 cat > create.user << 'eos'
 #!/usr/bin/bash
 
 set -euo pipefail
 echo; echo '✅  User certificat generation...'
-source .read.user
-read -rsp "Use « $USER » for certificat ([Ctrl]-[C] to abort) ? "; echo; echo
+echo; source .read.user
+read -rsp "Use « $USER » for certificat ([Ctrl]-[C] to abort) ? "; echo
+echo; source .read.pass; echo
 openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-384 -out users/$USER.key
-openssl req -new -key users/$USER.key -config .conf -out .$USER.csr -subj "/CN=$USER/$SUBJ"
-openssl ca -batch -config .conf -extensions ext_user -in .$USER.csr -out users/$USER.crt
-rm .$USER.csr; chmod 400 users/$USER.{crt,key}
-echo; echo ':: User P12 generation...'
+openssl req -new -key users/$USER.key -config .conf -out .$USER.csr -subj "/CN=$USER/O=Company/OU=Customer"
+openssl ca -batch -config .conf -extensions ext_user -in .$USER.csr -out users/$USER.crt -passin env:CAPASS
+unset CAPASS; rm .$USER.csr; chmod 400 users/$USER.{crt,key}
+echo; echo '📦  User P12 generation...'
 openssl pkcs12 -export -in users/$USER.crt -inkey users/$USER.key -certfile root/ca.crt -out users/$USER.p12 ||
 ( echo 'new try... '; openssl pkcs12 -export -in users/$USER.crt -inkey users/$USER.key -certfile root/ca.crt -out users/$USER.p12 ) ||
 ( echo 'last try... '; openssl pkcs12 -export -in users/$USER.crt -inkey users/$USER.key -certfile root/ca.crt -out users/$USER.p12 )
 [ -f users/$USER.p12 ] || exit 1
 chmod 400 users/$USER.p12
-echo; echo "🚀  You can now send « users/$USER.p12 » and « Export Password » to user"
-echo
+echo; echo "🚀  You can now send « users/$USER.p12 » and « Export Password » to user"; echo
 eos
 
 sed -i "s;\$SUBJ;$SUBJ;" create.user
@@ -141,14 +148,14 @@ cat > revoke.user << 'eos'
 
 set -euo pipefail
 echo; echo '✖️  User certificat revocation...'
-echo; ls -C users/*.crt | sed -E -e 's;(^| )users/; ;g' -e 's;\.crt( |$); ;g'
+echo; ls -1 users/*.crt | sed -e 's;^users/;;g' -e 's;\.crt$;;g'
 echo; source .read.user
-read -rsp "Revoke « $USER » ([Ctrl]-[C] to abort) ? "; echo; echo
-openssl ca -config .conf -revoke users/$USER.crt
-openssl ca -config .conf -gencrl -out server/crl.pem
-rm -f users/$USER.*
-echo; echo "📌  User « $USER » is now revoked and CRL is updated"
-echo
+read -rsp "Revoke « $USER » ([Ctrl]-[C] to abort) ? "; echo
+echo; source .read.pass; echo
+openssl ca -config .conf -revoke users/$USER.crt -passin env:CAPASS
+openssl ca -config .conf -gencrl -out server/crl.pem -passin env:CAPASS
+unset CAPASS; rm -f users/$USER.*
+echo; echo "📌  User « $USER » is now revoked and CRL is updated"; echo
 eos
 
 chmod +x revoke.user
@@ -161,7 +168,4 @@ echo 'Server mTLS certificate revocation list is « server/crl.pem ».'
 echo 'You can now create and/or revoke users certificat.'
 
 
-echo
-chmod -x "$SELF"
-unset CAPASS
-exec bash
+echo; chmod -x "$SELF"; unset CAPASS; exec bash
