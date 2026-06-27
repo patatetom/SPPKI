@@ -19,9 +19,7 @@ cat > .conf << eoc
 [ ca ]
 name                   = CAroot
 default_ca             = CA_default
-name_opt               = utf8,esc_ctrl,multiline,lname,align
 [ CA_default ]
-serial                 = random
 home                   = .
 database               = \$home/.db/index.txt
 serial                 = \$home/.db/serial
@@ -47,6 +45,7 @@ subjectKeyIdentifier   = hash
 basicConstraints       = critical,CA:true
 keyUsage               = critical,keyCertSign,cRLSign
 [ ext_server ]
+authorityKeyIdentifier = keyid:always,issuer
 basicConstraints       = critical,CA:FALSE
 subjectKeyIdentifier   = hash
 keyUsage               = critical,digitalSignature
@@ -60,7 +59,7 @@ basicConstraints       = critical,CA:FALSE
 subjectKeyIdentifier   = hash
 keyUsage               = critical,digitalSignature
 extendedKeyUsage       = clientAuth
-subjectAltName         = DNS:localhost
+subjectAltName         = DNS:$WWW,URI:https://$WWW/
 eoc
 
 
