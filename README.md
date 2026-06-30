@@ -14,6 +14,34 @@ SPPKI is in fact a [Bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell)) scrip
 The three variables `O` (Organization), `OU` (Organization Unit) and `WWW` (Common Name for server TLS) must be defined before starting the initialization by running `SPPKIinit` :
 open the script in an editor, make the necessary changes, and take this opportunity to check its contents.
 
+```console
+/tmp/SPPKI$ bash SPPKIinit 
+♻️  Simple Personal PKI initialization...
+1️⃣  Root CA key password...
+Type CA key password 🔑 : 
+Retype               🔑 : 
+⚠️  THIS IS VERY IMPORTANT SECRET 🔑 : REMEMBER IT AND NOT SHARE IT ⚠️  
+2️⃣  Root CA certificat generation...
+3️⃣  Server certificat generation...
+Using configuration from .conf
+Check that the request matches the signature
+Signature ok
+The Subject's Distinguished Name is as follows
+commonName            :ASN.1 12:'www.example.org'
+organizationName      :ASN.1 12:'Company'
+organizationalUnitName:ASN.1 12:'Customer'
+Certificate is to be certified until Jun 29 09:06:59 2036 GMT (3652 days)
+Write out database with 1 new entries
+Database updated
+Using configuration from .conf
+4️⃣  Client helpers generation...
+🎉 Simple Personal PKI initialized !
+Root CA certificate is « pki/root/ca.crt ».
+Server TLS certificate and key are « pki/server/tls.{crt,key} ».
+Server mTLS certificate revocation list is « server/crl.pem ».
+You can now create and/or revoke users certificat.
+```
+
 Once initialized, the PKI has the following « visible » structure :
 
 ```
@@ -39,3 +67,45 @@ pki/
 > ├── .read.pass
 > └── .read.user
 > ```
+
+```console
+/tmp/SPPKI/pki$ ls -l
+total 8
+-rwxrwxr-x 1 bob bob 1153 30 juin  11:06 create.user
+-rwxrwxr-x 1 bob bob  517 30 juin  11:06 revoke.user
+drwx------ 2 bob bob   80 30 juin  11:06 root
+drwxrwx--- 2 bob bob  100 30 juin  11:06 server
+drwxrwxr-x 2 bob bob   40 30 juin  11:06 users
+
+/tmp/SPPKI/pki$ ./create.user 
+✅  User certificat generation...
+User (ASCII alpha num chars only) : alice
+Use « alice » for certificat ([Ctrl]-[C] to abort) ? 
+Type CA key password 🔑 : 
+Using configuration from .conf
+Check that the request matches the signature
+Signature ok
+The Subject's Distinguished Name is as follows
+commonName            :ASN.1 12:'alice'
+organizationName      :ASN.1 12:'Company'
+organizationalUnitName:ASN.1 12:'Customer'
+Certificate is to be certified until Jun 29 09:07:51 2036 GMT (3652 days)
+Write out database with 1 new entries
+Database updated
+📦  User P12 generation...
+Enter Export Password:
+Verifying - Enter Export Password:
+🚀  You can now send « users/alice.p12 » and « Export Password » to user
+
+/tmp/SPPKI/pki$ ./revoke.user 
+✖️  User certificat revocation...
+alice
+User (ASCII alpha num chars only) : alice
+Revoke « alice » ([Ctrl]-[C] to abort) ? 
+Type CA key password 🔑 : 
+Using configuration from .conf
+Revoking Certificate D8D733393C76BBD896B7B38D13DD2E2B.
+Database updated
+Using configuration from .conf
+📌  User « alice » is now revoked and CRL is updated
+```
