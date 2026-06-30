@@ -92,6 +92,8 @@ Verifying - Enter Export Password:
 🚀  You can now send « users/alice.p12 » and « Export Password » to user
 ```
 
+> once in Alice's hands, key and certificate contained in P12 file must be imported into system and/or browser.
+
 ```console
 /tmp/SPPKI/pki$ ./revoke.user 
 
