@@ -1,4 +1,5 @@
-# SPPKI
+# 🗝️ SPPKI
+
 **S**imple **P**ersonal **PKI**.
 
 SPPKI is in fact a [Bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell)) script based on [OpenSSL](https://en.wikipedia.org/wiki/OpenSSL) that allows you to quickly and easily set up a small « in-house » [PKI](https://en.wikipedia.org/wiki/Public_key_infrastructure).
