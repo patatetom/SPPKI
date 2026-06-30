@@ -93,7 +93,7 @@ Verifying - Enter Export Password:
 ```
 
 > once in Alice's hands, key and certificate contained in P12 file must be imported into system and/or browser.<br/>
-> if using 👮‍♂️ [mTLSauth](https://github.com/patatetom/mTLSauth), command python -c "print(int('$(openssl x509 -in /tmp/SPPKI/pki/users/alice.crt -noout -serial)'[7:], 16))" can be used to easily retrieve serial number of client certificate in decimal format.
+> if using 👮‍♂️ [mTLSauth](https://github.com/patatetom/mTLSauth), command `python -c "print(int('$(openssl x509 -in /tmp/SPPKI/pki/users/alice.crt -noout -serial)'[7:], 16))"` can be used to easily retrieve serial number of client certificate in decimal format.
 
 ```console
 /tmp/SPPKI/pki$ ./revoke.user 
