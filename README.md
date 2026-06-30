@@ -15,7 +15,8 @@ The three variables `O` (Organization), `OU` (Organization Unit) and `WWW` (Comm
 open the script in an editor, make the necessary changes, and take this opportunity to check its contents.
 
 ```console
-/tmp/SPPKI$ bash SPPKIinit 
+/tmp/SPPKI$ bash SPPKIinit
+
 ♻️  Simple Personal PKI initialization...
 1️⃣  Root CA key password...
 Type CA key password 🔑 : 
@@ -69,15 +70,8 @@ pki/
 > ```
 
 ```console
-/tmp/SPPKI/pki$ ls -l
-total 8
--rwxrwxr-x 1 bob bob 1153 30 juin  11:06 create.user
--rwxrwxr-x 1 bob bob  517 30 juin  11:06 revoke.user
-drwx------ 2 bob bob   80 30 juin  11:06 root
-drwxrwx--- 2 bob bob  100 30 juin  11:06 server
-drwxrwxr-x 2 bob bob   40 30 juin  11:06 users
-
 /tmp/SPPKI/pki$ ./create.user 
+
 ✅  User certificat generation...
 User (ASCII alpha num chars only) : alice
 Use « alice » for certificat ([Ctrl]-[C] to abort) ? 
@@ -96,8 +90,11 @@ Database updated
 Enter Export Password:
 Verifying - Enter Export Password:
 🚀  You can now send « users/alice.p12 » and « Export Password » to user
+```
 
+```console
 /tmp/SPPKI/pki$ ./revoke.user 
+
 ✖️  User certificat revocation...
 alice
 User (ASCII alpha num chars only) : alice
